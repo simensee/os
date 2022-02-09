@@ -1,18 +1,20 @@
 #include <stdio.h>
+
+#include <stdlib.h>
 #include <time.h>
 
 int main() {
     char c;
     time_t t = time(NULL);
     struct tm current_time = *localtime(&t);
-
+    int c_time = mktime(&current_time);
 
     struct alarm {
         struct tm time;
         int pid;
     }
     
-    printf("Welcome to the alarm clock! bla bla It is currently %d. \n", mktime(current_time));
+    printf("Welcome to the alarm clock! bla bla It is currently %s", ctime(&t)); 
     printf("Please enter \"c\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)");
     c = scanf("");
 
