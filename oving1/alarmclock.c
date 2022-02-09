@@ -12,7 +12,7 @@ int main() {
         int pid;
     }
     
-    printf("Welcome to the alarm clock! It is currently %d. \n", mktime(current_time));
+    printf("Welcome to the alarm clock! bla bla It is currently %d. \n", mktime(current_time));
     printf("Please enter \"c\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)");
     c = scanf("");
 
