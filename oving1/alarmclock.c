@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-int main(void) {
+//int main(void) {
     /*char c;
     time_t t = time(NULL);
     struct tm current_time = *localtime(&t);
@@ -12,9 +12,22 @@ int main(void) {
     struct alarm {
         struct tm time;
         int pid;
-    }
+    }*/
 
-    time_t currentTime;*/
+
+    
+    
+    int main(void) {
+        char buff[100];
+        time_t now = time(0);
+        strftime(buff, 100, "%Y-%m-%d %H:%M:%S", localtime(&now));
+        printf("Welcome to the alarm clock! It is currently %s\n", buff);
+        return 0;
+
+    
+
+   //DETTE ER KODE LISE HAR LOKET MED, FUNKER, MEN FEIL FORMAT
+    /*time_t currentTime;
     // * betyr ...
     char *currentTimeInString;
 
@@ -24,13 +37,13 @@ int main(void) {
     strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
 
 
-    if (t == ((time_t)-1))
+   if (currentTime == ((time_t)-1))
     {
         printf("Failed to get the current time.\n");
     }
     else
     {
-        currentTimeInString = ctime(&t);
+        currentTimeInString = ctime(&currentTime);
 
         if (currentTimeInString == NULL)
         {
@@ -40,10 +53,15 @@ int main(void) {
         {
             printf("\nThe current time is : %s", currentTimeInString);
         }
-    }
+    }*/
 
     return 0;
+    
 }
+
+
+
+
 
     /*
     printf("Welcome to the alarm clock! bla bla It is currently %s", ctime(&t)); 
