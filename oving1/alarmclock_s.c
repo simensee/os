@@ -22,7 +22,7 @@ void empty_stdin()
         c = getchar();
 }
 
-int alarms_size() {
+int alarms_size() { // find size of alarms array
     int size=0;
     for (int i=0; i < sizeof(alarms); i++) {
         if (alarms[i].pid != 0) {
@@ -37,12 +37,9 @@ void printSystemTime(time_t t){
     printf("%04d-%02d-%02d %02d:%02d:%02d\n", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
 
-void add_alarm_array(time_t alarm_time, pid_t pid) { // [TODO] legge til alarm i array 'alarms'
 
-}
 
 void list_alarms() { // list all active alarms 
-    //for(int i = 0; i <= alarms_size() / sizeof(struct alarm); i++)
     for(int i = 0; i < alarms_size(); i++)
     {
         if (alarms[i].pid != 0) {
@@ -59,12 +56,11 @@ void list_alarms() { // list all active alarms
 void InsertAlarmInArray(struct alarm alarm ) {
     int i, pos; 
     
-    for(i=0;i<=alarms_size();i++)
+    for(i=0;i<=alarms_size();i++) // find correct position for alarm 
     {
-   	    if(alarm.alarm_time<alarms[i].alarm_time || alarms[i].alarm_time == 0)
+   	    if(alarm.alarm_time<alarms[i].alarm_time || alarms[i].alarm_time == 0) 
         {
             pos = i;
-            //printf("%d",i);
             break;
         }
         else
@@ -82,14 +78,12 @@ void InsertAlarmInArray(struct alarm alarm ) {
 }
 
 void cancel_alarm(int pid) { // delete alarm from array 
-    //printf("\nOld alarm array size: %d\n", alarms_size());
+    
     int pos;
     for (int i=0; i<=alarms_size(); i++) { // find position of alarm with correct pid
-        //printf("\nPid for process: %d", alarms[i].pid);
-        //printSystemTime(alarms[i].alarm_time);
+        
             if (pid == alarms[i].pid) {
                 pos = i;
-                //printf("\nPosition of deleted process: %d\n", pos);
             }
             
     }
@@ -101,7 +95,7 @@ void cancel_alarm(int pid) { // delete alarm from array
 
 }
 
-void cancel_alarms() { // cancel all alarms
+void cancel_alarms() { // cancel alarm
     int input;
     int i;
     pid_t pid;
@@ -112,7 +106,7 @@ void cancel_alarms() { // cancel all alarms
     pid = alarms[input-1].pid;
     
     
-    if(input-1 < 0 || input > alarms_size())
+    if(input-1 < 0 || input > alarms_size()) 
     {
         printf("\nInvalid position! Please enter position between 1 to %d\n", alarms_size());
     }
@@ -124,27 +118,13 @@ void cancel_alarms() { // cancel all alarms
             alarms[i] = alarms[i + 1];
         }
 
-
-        /* Print array after deletion */
-        printf("\nElements of array after delete are : ");
-        list_alarms();
-        
     }
 
     printf("\nCancel alarm with id: [%d]\n", pid);
 
     
-    kill(pid, SIGTERM);
-    /*
-    for(i = 0; i < sizeof(alarms) / sizeof(alarms); i++)
-    {
-        if (alarms[i].pid == i)
-        {
-            // cancel alarm with pid=i TODO
-            
-        }
-        
-    }*/
+    kill(pid, SIGTERM); // kills cancelled c
+    
 }
 
 int new_alarm() { 
@@ -155,26 +135,19 @@ int new_alarm() {
     printf("Enter the alarm in format \"YYYY-MM-dd hh:mm:ss\" :");
     scanf(" %[^\n]19s", buff); 
     empty_stdin();
-    //puts(buff);ss
-
-    
     strptime(buff, "%Y-%m-%d %H:%M:%S", &result);
     t = mktime(&result); 
     time(&now);
     diff = (int) difftime(t, now);
 
-    //[NY KODE START]: klone prosessen og få den til å ringe etter x sekunder
     pid = fork();
     
-    if (pid == 0) {
+    if (pid == 0) { // child process waits the specified time and ring, need to implement sound aswell 
         sleep(diff);
         printf("\nRIIIIING\n");
-        /*printf("\nID of child process: %d\n", getpid());
-        printf("Array in child proces [%d]:", getpid());
-        list_alarms();*/
-        //ancel_alarm(getpid());
+        
         exit(0);
-        //kill(getpid(), SIGTERM);
+        
     }
 
     else {
@@ -183,12 +156,7 @@ int new_alarm() {
         new_alarm.pid = pid;
         InsertAlarmInArray(new_alarm);
 
-
-
-        //TODO legge struct alarm inn i array
-
-        //[NY KODE SLUTT]
-        printf("\nScheduling alarm in: %d seconds\n", diff); // Endret her for å printe ut differansen mellon ringetidspunkt og nå
+        printf("\nScheduling alarm in: %d seconds\n", diff); 
         strftime(buff,sizeof(buff), "%Y-%m-%d %H:%M:%S", &result);
 
         return 0;
@@ -210,7 +178,6 @@ int main(void) {
     time(&now);
     printf("Welcome to the alarm clock! It is currently ");
     printSystemTime(now);
-    //getchar();
 
     do {
         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit): ");
@@ -232,8 +199,7 @@ int main(void) {
             input = 'r';
         }
         
-        while ((pid = waitpid(-1, &st, WNOHANG)) > 0) {
-            //printf("Child pid [%d] exited\n", pid);
+        while ((pid = waitpid(-1, &st, WNOHANG)) > 0) { // Deletes already rung child process from array and kills zombie
             cancel_alarm(pid);
         } 
     } 
