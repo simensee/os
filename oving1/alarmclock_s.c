@@ -133,14 +133,19 @@ int new_alarm() {
     time_t t, now;
     int diff, st, pid;
     char buff[19];
-    printf("Enter the alarm in format \"YYYY-MM-dd hh:mm:ss\" :");
-    scanf(" %[^\n]19s", buff); 
-    empty_stdin();
-    strptime(buff, "%Y-%m-%d %H:%M:%S", &result);
-    t = mktime(&result); 
-    time(&now);
-    diff = (int) difftime(t, now);
-
+    do {
+        printf("\nEnter the alarm in format \"YYYY-MM-dd hh:mm:ss\" :");
+        scanf(" %[^\n]19s", buff); 
+        empty_stdin();
+        strptime(buff, "%Y-%m-%d %H:%M:%S", &result);
+        t = mktime(&result); 
+        time(&now);
+        diff = (int) difftime(t, now);
+        if (diff < 0 ) {
+            printf("\nEnter a valid alarm time!\n");
+            
+        }
+    } while (diff <= 0);
     pid = fork();
     
     if (pid == 0) { 
