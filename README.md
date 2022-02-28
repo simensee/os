@@ -46,7 +46,7 @@ Schedule an alarm, check which alarm to cancel by listing all alarms. Cancel the
 
 1. What do you do to test this case?
 
-   You run the same procedure as the **The first test case**. You schedule an alarm at 2022-03-22 10:00:00, then checks which alarm to cancel by entering "l". Then cancels the alarm by the number the alarm has, for instance 1 or 2. Then presses "x" to exit the program.
+   You run the same procedure as the **The first test case**. You schedule an alarm at 2022-03-22 10:00:00, then checks which alarm to cancel by entering "l". Then cancels the alarm by the number the alarm has, for instance 1 or 2. The user enters "l" to list all alarms, and then presses "x" to exit the program.s
 
 2. What does the test do?
 
@@ -58,13 +58,19 @@ Schedule an alarm, check which alarm to cancel by listing all alarms. Cancel the
 
 #### Third Test Case
 
-Checks the list of the alarms, then cancel 2 alarms and check if they are canceled
+The user wants to cancel the two earliest alarms. 
 
 1. What do you do to test this case?
 
+   Schedule three alarms with 's', and list all of them with 'l'. Cancel the two earliest alarms with 'c' and then '1' two times. Checks with 'l' that only the last alarm remains in the list. 
+
 2. What does the test do?
 
+   The test checks that both the array with alarms updates after each alarm is cancelled. In addition, it checks that the id's which gets scanned after 'c' is updated. 
+
 3. What is the expected result?
+
+   The expected result is that only one alarm remains in the list. 
 
 #### Fourth Test Case
 
@@ -76,7 +82,7 @@ Schedules three alarms at the same time and cancel one.
 
 2. What does the test do?
 
-   The test tests if there are possibilities of having two alarms at same time by using the programs functionality such as scheduling, cancelling and the ringing function.
+   The test tests if there are possibilities of having two alarms at same time by using the programs functionality such as scheduling, cancelling and the ringing function. It also checks that the cancelled alarm actually gets cancelled, and wont ring. 
 
 3. What is the expected result?
 

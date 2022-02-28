@@ -10,6 +10,7 @@
 typedef struct alarm {
         time_t alarm_time;
         int pid;
+        char sound;
 }Alarm;
 
 static struct alarm alarms[10];
@@ -32,7 +33,7 @@ int alarms_size() { // find size of alarms array
     return size;
 }
 
-void printSystemTime(time_t t){
+void print_system_time(time_t t){
     const struct tm *tm = localtime(&t);
     printf("%04d-%02d-%02d %02d:%02d:%02d\n", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
@@ -45,7 +46,7 @@ void list_alarms() { // list all active alarms
         if (alarms[i].pid != 0) {
             
             printf("\nAlarm %d at ", i+1);
-            printSystemTime(alarms[i].alarm_time);
+            print_system_time(alarms[i].alarm_time);
             printf(" with ID: %d\n\n", alarms[i].pid);
         }
         
@@ -53,7 +54,7 @@ void list_alarms() { // list all active alarms
     
 }
 
-void InsertAlarmInArray(struct alarm alarm ) {
+void insert_alarm_in_array(struct alarm alarm ) {
     int i, pos; 
     
     for(i=0;i<=alarms_size();i++) // find correct position for alarm 
@@ -95,14 +96,14 @@ void cancel_alarm(int pid) { // delete alarm from array
 
 }
 
-void cancel_alarms() { // cancel alarm
+void cancel_alarms() { 
     int input;
     int i;
     pid_t pid;
     printf("Cancel which alarm?\n");
     scanf("%d", &input);
-    //empty_stdin();
-
+    
+    
     pid = alarms[input-1].pid;
     
     
@@ -142,10 +143,11 @@ int new_alarm() {
 
     pid = fork();
     
-    if (pid == 0) { // child process waits the specified time and ring, need to implement sound aswell 
+    if (pid == 0) { 
         sleep(diff);
-        printf("\nRIIIIING\n");
         
+        printf("\nRIIIIING\n");
+        execlp("afplay", "afplay", "alarm-clock-01.wav", NULL);
         exit(0);
         
     }
@@ -154,7 +156,7 @@ int new_alarm() {
         struct alarm new_alarm;
         new_alarm.alarm_time = t;
         new_alarm.pid = pid;
-        InsertAlarmInArray(new_alarm);
+        insert_alarm_in_array(new_alarm);
 
         printf("\nScheduling alarm in: %d seconds\n", diff); 
         strftime(buff,sizeof(buff), "%Y-%m-%d %H:%M:%S", &result);
@@ -177,12 +179,12 @@ int main(void) {
 
     time(&now);
     printf("Welcome to the alarm clock! It is currently ");
-    printSystemTime(now);
+    print_system_time(now);
 
     do {
         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit): ");
         scanf("%c", &input);
-        empty_stdin();
+
         
         if (input == 'l') {
             list_alarms();
