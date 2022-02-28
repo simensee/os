@@ -31,7 +31,7 @@ Are we supposed to write cases for usability tests?
 The user wants to schedule an alarm and check if the alarm is added to the list and wait for it to go off.
 
 1. What do you do to test this case?
-   ![first_case](oving1/tester_oving1/Test1.png)
+   ![first_case](oving1/test_1.png)
 
    To test this case, firstly you compile and run the program by using the commands written over. Then in the input field you write "s" for schedule a new alarm. The new alarm you are to be scheduling are written in this format YYYY-MM-dd hh:mm:ss, you write 2022-02-24 19:37:10.
 
@@ -49,7 +49,7 @@ Schedule an alarm, check which alarm to cancel by listing all alarms. Cancel the
 
 1. What do you do to test this case?
 
-   ![second_case](oving1/tester_oving1/Test2.png)
+   ![second_case](oving1/test_2.png)
 
    You run the same procedure as the **The first test case**. You schedule an alarm at 2022-03-22 10:00:00, then checks which alarm to cancel by entering "l". Then cancels the alarm by the number the alarm has, for instance 1 or 2. The user enters "l" to list all alarms, and then presses "x" to exit the program.s
 
@@ -67,7 +67,7 @@ The user wants to cancel the two earliest alarms.
 
 1. What do you do to test this case?
 
-   ![third_case](oving1/tester_oving1/Test3.png)
+   ![third_case](oving1/test_3.png)
 
    Schedule three alarms with 's', and list all of them with 'l'. Cancel the two earliest alarms with 'c' and then '1' two times. Checks with 'l' that only the last alarm remains in the list.
 
@@ -85,7 +85,7 @@ Schedules three alarms at the same time and cancel one.
 
 1. What do you do to test this case?
 
-   ![fourth_case](oving1/tester_oving1/Test4.png)
+   ![fourth_case](oving1/test_4.png)
 
    Schedule three alarms at the same time with the same procedure mentioned, then list up all to check if they are scheduled. Cancel one, and check if the alarm is cancelled by "l", listing them up again.
 
