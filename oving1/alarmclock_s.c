@@ -187,12 +187,15 @@ int main(void) {
     print_system_time(now);
 
     do {
+
         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit): ");
         scanf("%c", &input);
 
         
         if (input == 'l') {
             list_alarms();
+            empty_stdin();
+
             input = 'r';
         }
 
@@ -203,8 +206,11 @@ int main(void) {
 
         if (input == 'c') {
             cancel_alarms();
+            empty_stdin();
+
             input = 'r';
         }
+
         
         while ((pid = waitpid(-1, &st, WNOHANG)) > 0) { // Deletes already rung child process from array and kills zombie
             cancel_alarm(pid);
