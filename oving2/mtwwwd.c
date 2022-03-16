@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include <sem.h>
 
 
 #include <sys/socket.h>
@@ -64,6 +66,8 @@ int main(int argc, char* argv[]) {
     listen(server_socket, 100);
     
     // aksepterer innkommende socketer 
+    // [Kommentar fra Elizabeth] Spesifisert i oppgaven er ved bruk av accept(2) skjønte ikke helt dette :(
+    
     client_socket = accept(server_socket, (struct sockaddr*) &port_in, (socklen_t*) &addr_len);
     printf("Accepting connection...\n\n");
     if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
@@ -100,4 +104,58 @@ int main(int argc, char* argv[]) {
     send(client_socket, http_header, sizeof(http_header), 0); // sender responsen 
     //close(client_socket); denne må nok brukes etterhvert, men fikk det ikke til å funke
     return 0;
+    
+    pthread_t thread1;
+
+    pthread_create( &thread1, NULL, &functionCount1, NULL);
+    pthread_join( thread1, NULL);
+
+    exit(0);
+}
+
+
+    
+}
+// Shaky oppgave b)
+
+/*static pthread_mutex_t func_mutex = PTHREAD_MUTEX_INITIALIZER;
+int counter=0;
+
+void *func() {
+
+    pthread_mutex_lock(&func_mutex);
+    counter++
+    pthread_mutex_unlock(&func_mutex);
+}*/
+
+pthread_mutex_t count_mutex     = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t condition_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  condition_cond  = PTHREAD_COND_INITIALIZER;
+
+void *functionCount1();
+int  count = 0;
+#define COUNT_DONE  10 // hva gjør dette? 
+#define COUNT_HALT1  3
+#define COUNT_HALT2  6
+
+
+
+void *functionCount1()
+{
+   for(;;)
+   {
+      pthread_mutex_lock( &condition_mutex );
+      while( count >= COUNT_HALT1 && count <= COUNT_HALT2 )
+      {
+         pthread_cond_wait( &condition_cond, &condition_mutex );
+      }
+      pthread_mutex_unlock( &condition_mutex );
+
+      pthread_mutex_lock( &count_mutex );
+      count++;
+      printf("Counter value functionCount1: %d\n",count);
+      pthread_mutex_unlock( &count_mutex );
+
+      if(count >= COUNT_DONE) return(NULL);
+    }
 }
