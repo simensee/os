@@ -23,7 +23,7 @@ GET *path* HTTP 1/1 \r\n\r\n
 
 int main(int argc, char* argv[]) {
 
-    char *path, *buff[512];
+    char *path, *buff[4096*1024];
     if (argc < 1) { // Sjekker om man har spesifisert et argument 
         printf("Too few arguments\n");
         exit(1); 
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     // Setter addresse til localhost og port til 8001, samt spesifiserer at det er en internett-adresse. 
     struct sockaddr_in remote_address;
     remote_address.sin_family = AF_INET;
-    remote_address.sin_port = htons(8001);
+    remote_address.sin_port = htons(8002);
     remote_address.sin_addr.s_addr = inet_addr("127.0.0.1");
     //inet_aton(address, (struct in_addr *)&remote_address.sin_addr.s_addr);
 
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         
     // Initierer HTTP-requesten inn i buff, med path integrert i stringen 
     snprintf((char*)buff, sizeof(buff), "GET %s HTTP/1.1 \r\n\r\n", path);
-    char response[4096];
+    char response[4096*1024];
 
     // Sender requesten til socketen 
     send(client_socket, buff, sizeof(buff), 0);

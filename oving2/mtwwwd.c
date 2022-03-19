@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <sem.h>
+//#include <sem.h>
 
 
 #include <sys/socket.h>
@@ -38,7 +38,7 @@ char * split_string(char str) {
 int main(int argc, char* argv[]) {
     
     
-    int server_socket, client_socket, addr_len, portnumber;
+    int server_socket, addr_len, portnumber, client_socket;
     char *www_path, buffer[512];
     
     // setter argumentene inn i variabler
@@ -61,61 +61,76 @@ int main(int argc, char* argv[]) {
 
     // binder server-socketen sammen med adressene 
     bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address));
-    
     // hører etter requester, her må det nok implementeres en while-løkke for å kunne motta nye requester når de er ferdige
+
     listen(server_socket, 100);
+
+    while (1) {
+        char *string;
+        // aksepterer innkommende socketer 
+        // [Kommentar fra Elizabeth] Spesifisert i oppgaven er ved bruk av accept(2) skjønte ikke helt dette :(
+        
+        client_socket = accept(server_socket, (struct sockaddr*) &port_in, (socklen_t*) &addr_len);
+        printf("Accepting connection...\n\n");
+        if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
+        {
+            perror("Failed to recive request from client");
+            exit(1);
+        }
+        //bzero(buffer,sizeof(buffer));
+
+
+        
+        printf("Client socket received! \nContent of request: [%s]", buffer); // programflyt 
+
+        // splitter opp mottakende request i forskjellige ting 
+        char * request_type = strtok(buffer, " "); // her blir GET lagt, evt andre typer hvis det skal brukes
+        char * path = strtok(NULL, " "); // selve pathen i requesten blir lagt inn her 
+        // Printe ut for å sjekke om det er riktig, dette kan nok fjernes før levering 
+        printf( " %s\n", request_type); 
+        printf( " %s\n", path);
+        FILE *html_data; // initierer en fil 
+        strcat(www_path, path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
+        
+        char http_header[2048];
+        if ((html_data = fopen(www_path, "rb"))==NULL) { // prøver å åpne file for å lese 
+            strcpy(http_header, "HTTP/1.1 404 Not Found\r\n\r\n"); // dersom den ikke finnes 
+        }
+        else {
+            fseek(html_data, 0, SEEK_END);
+            long fsize = ftell(html_data);
+            fseek(html_data, 0, SEEK_SET);
+
+            string = malloc(fsize + 1);
+            fread(string, fsize, 1, html_data);
+            fclose(html_data);
+
+            string[fsize] = 0;
+            strcpy(http_header, "HTTP/1.1 200 OK\r\n\n"); // dersom den finnes
+            printf("%s\r\n", string);
+        }
     
-    // aksepterer innkommende socketer 
-    // [Kommentar fra Elizabeth] Spesifisert i oppgaven er ved bruk av accept(2) skjønte ikke helt dette :(
-    
-    client_socket = accept(server_socket, (struct sockaddr*) &port_in, (socklen_t*) &addr_len);
-    printf("Accepting connection...\n\n");
-    if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
-    {
-        perror("Failed to recive request from client");
-        exit(1);
+
+        char response_data[1024];
+        //fgets(response_data, 1024, html_data); // leser filens innhold inn i response_data 
+        strcat(http_header, string); // setter response_data sammen med headeren til responsen tilbake til klienten 
+        send(client_socket, http_header, sizeof(http_header), 0); // sender responsen 
+        //close(client_socket);
     }
-    
-
-
-    printf("Client socket received! \nContent of request: [%s]", buffer); // programflyt 
-
-    // splitter opp mottakende request i forskjellige ting 
-    char * request_type = strtok(buffer, " "); // her blir GET lagt, evt andre typer hvis det skal brukes
-    char * path = strtok(NULL, " "); // selve pathen i requesten blir lagt inn her 
-    // Printe ut for å sjekke om det er riktig, dette kan nok fjernes før levering 
-    printf( " %s\n", request_type); 
-    printf( " %s\n", path);
-    FILE *html_data; // initierer en fil 
-    strcat(www_path, path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
-    
-    char http_header[2048];
-    if ((html_data = fopen(www_path, "r"))==NULL) { // prøver å åpne file for å lese 
-        strcpy(http_header, "HTTP/1.1 404 Not Found\r\n\r\n"); // dersom den ikke finnes 
-    }
-    else {
-        strcpy(http_header, "HTTP/1.1 200 OK\r\n\n"); // dersom den finnes
-    }
-   
-
-    char response_data[1024];
-    fgets(response_data, 1024, html_data); // leser filens innhold inn i response_data 
-    strcat(http_header, response_data); // setter response_data sammen med headeren til responsen tilbake til klienten 
-    send(client_socket, http_header, sizeof(http_header), 0); // sender responsen 
     //close(client_socket); denne må nok brukes etterhvert, men fikk det ikke til å funke
     return 0;
     
-    pthread_t thread1;
+    /*pthread_t thread1;
 
     pthread_create( &thread1, NULL, &functionCount1, NULL);
-    pthread_join( thread1, NULL);
+    pthread_join( thread1, NULL);*/
 
-    exit(0);
+    //exit(0);
 }
 
 
     
-}
+//}
 // Shaky oppgave b)
 
 /*static pthread_mutex_t func_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -127,7 +142,7 @@ void *func() {
     counter++
     pthread_mutex_unlock(&func_mutex);
 }*/
-
+/*
 pthread_mutex_t count_mutex     = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t condition_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  condition_cond  = PTHREAD_COND_INITIALIZER;
@@ -158,4 +173,4 @@ void *functionCount1()
 
       if(count >= COUNT_DONE) return(NULL);
     }
-}
+}*/
