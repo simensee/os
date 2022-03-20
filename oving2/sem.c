@@ -1,20 +1,38 @@
 #include "sem.h"
 //#define MAX_QUEUE_SIZE=10;
 #include <stddef.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 //static jmp_buf s_jumpBuffer;
 
 struct SEM {
     int permits;
-    
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+
 };
 
 
 
 SEM *sem_init(int initVal) {
-    struct SEM *sem;
+    if (initVal < 1) {
+        return NULL;
+    }
+    SEM* sem = malloc(sizeof(struct SEM));
+    if (sem == NULL) {
+        return NULL;
+    }
     sem->permits = initVal;
+    pthread_mutex_t temp_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t temp_cond = PTHREAD_COND_INITIALIZER;
+    /*if (temp_mutex == NULL || temp_cond == NULL) {
+        return NULL;
+    }*/
+    sem->mutex = temp_mutex;
+    sem->cond = temp_cond;
     /*if (setjmp(s_jumpBuffer)) {
     // The longjmp was executed and returned control here
     return NULL;
@@ -25,7 +43,7 @@ SEM *sem_init(int initVal) {
     return sem;
 }
 
-/* Destroys a semaphore and frees all associated resources.
+ /* Destroys a semaphore and frees all associated resources.
  *
  * Parameters:
  *
@@ -41,7 +59,7 @@ SEM *sem_init(int initVal) {
 
 int sem_del(SEM *sem) {
 
-    
+    free(sem);
     
 }
 
@@ -58,12 +76,15 @@ int sem_del(SEM *sem) {
 
 void P(SEM *sem) {
     // lock the semaphore
-    while 
+    pthread_mutex_lock(&sem->mutex);
     if (sem->permits > 0) {
         sem->permits--;
+        pthread_mutex_unlock(&sem->mutex);
     }
     else {
-
+        while (sem->permits < 0) {
+            pthread_cond_wait(&sem->cond, &sem->mutex);
+        }
     }
 
     //unlock the semaphore
@@ -82,9 +103,12 @@ void P(SEM *sem) {
 void V(SEM *sem) {
 
     //lock the semaphore
+    pthread_mutex_lock(&sem->mutex);
     sem->permits = sem->permits + 1;
+    pthread_mutex_unlock(&sem->mutex);
+    pthread_cond_signal(&sem->cond);
     //unlock the semaphore
-}
+}   
 
 int main() {
     return 0;
