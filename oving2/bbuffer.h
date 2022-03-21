@@ -69,7 +69,7 @@ int  bb_get(BNDBUF *bb);
  *
  * Parameters:
  *
- * bb     Handle of the bounded buffer.
+ * bb     Handle of the bounded buffer.x|
  * fd     Value that shall be added to the buffer.
  *
  * Returns:
