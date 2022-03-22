@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 
+
 //static jmp_buf s_jumpBuffer;
 
 struct SEM {
@@ -58,9 +59,7 @@ SEM *sem_init(int initVal) {
  */
 
 int sem_del(SEM *sem) {
-
     free(sem);
-    
 }
 
 /* P (wait) operation.
@@ -82,8 +81,9 @@ void P(SEM *sem) {
         pthread_mutex_unlock(&sem->mutex);
     }
     else {
-        while (sem->permits < 0) {
+        while (sem->permits < 1) {
             pthread_cond_wait(&sem->cond, &sem->mutex);
+            // fjerne en permit
         }
     }
 
@@ -110,6 +110,4 @@ void V(SEM *sem) {
     //unlock the semaphore
 }   
 
-int main() {
-    return 0;
-}
+
