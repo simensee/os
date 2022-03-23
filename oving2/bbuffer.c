@@ -14,7 +14,7 @@
     
 }; */
 
-struct BNDBUF{
+typedef struct BNDBUF{
     //pekere og arrays i C er basically det samme, 
     //denne skal være arrayet fordi vi skal allokere det på heapen. 
     //Slik kan vi endre str på runtime
@@ -22,19 +22,21 @@ struct BNDBUF{
     //head og tail forteller posisjonen i arrayet frammerst og bakerst i listen.
     //num_entries sier hvor mange elementer det er i køen
     //siez er str på arrayet og er greit så vi ikke overflyter arrayet.
-    int head, tail, num_entries, size;
+    int num_entries;
+    int size;
+    int *head, *tail;
     SEM* empty_buffer;
     SEM* full_buffer; 
-};
+}BNDBUF;
 
 //denne var ikke med i videoen, men lar den være
 BNDBUF *bb_init(unsigned int size) {
-    struct BNDBUF *bb = malloc(sizeof(BNDBUF));
-    bb->head = size;
-    bb->values = malloc(sizeof(size)); 
+    BNDBUF *bb = malloc(sizeof(BNDBUF));
+    bb->size = size;
+    bb->values = (int *)malloc(sizeof(int) * size); 
     bb->num_entries=0; 
-    bb->head = 0;
-    bb->tail = 0;
+    bb->head = bb->values;
+    bb->tail = bb->values;
     bb->empty_buffer = sem_init(size);
     bb->full_buffer = sem_init(0);
     return bb;
@@ -68,9 +70,9 @@ bool bb_full(BNDBUF* bb) {
  */
 
 void bb_del(BNDBUF *bb) {
-    free(bb->buffer);
-    sem_del(free(bb->empty_buffer));
-    sem_del(free(bb->full_buffer));
+    free(bb->values);
+    sem_del(bb->empty_buffer);
+    sem_del(bb->full_buffer);
     
 }
 
@@ -93,9 +95,13 @@ int bb_get(BNDBUF *bb) {
     int result;
 
     P(bb->full_buffer);
-    result = bb->values[bb->head];
+    result = *bb->head;
+    bb->head--;
+    if (bb->head == bb->values + bb->size)
+        bb->head = bb->values;
+    /*result = bb->values[bb->head];
     bb->head = (bb->head + 1) % bb->size;
-    bb->num_entries--;
+    bb->num_entries--;*/
     V(bb->empty_buffer);
     /*if (!bb_empty(bb)) {
         P(bb->sem);
@@ -133,15 +139,20 @@ int bb_get(BNDBUF *bb) {
  */
 
 void bb_add(BNDBUF *bb, int fd) {
-    //adder et element til køen/bufferen i tailen
+    //adder et element til køen/   bufferen i tailen
 
     P(bb->empty_buffer);
-    bb->values[bb->tail] = fd;
+    *bb->tail = fd;
+    bb->tail++;
     bb->num_entries++;
-    bb->tail = (bb->tail + 1) % bb->size;
+    if (bb->tail == bb->values + bb->size)
+        bb->tail = bb->values;
+    /*bb->values[bb->tail] = fd;
+    bb->num_entries++;
+    bb->tail = (bb->tail + 1) % bb->size;*/
     V(bb->full_buffer);
 
-    return fd;
+    //return fd;
     // Tidligere kode:
     /*P(bb->sem);
     if (bb_full(bb) == false) {

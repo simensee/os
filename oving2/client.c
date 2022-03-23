@@ -1,11 +1,10 @@
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
 #include <arpa/inet.h>
-
 #include <netinet/in.h>
 
 /*
@@ -31,6 +30,7 @@ int main(int argc, char* argv[]) {
     path = argv[1]; // Setter argumentet (pathen) inn i variabelen. 
     
     int client_socket; 
+    printf("::::");
     client_socket = socket(AF_INET, SOCK_STREAM, 0); // Lager klient-socketen 
 
     // Setter addresse til localhost og port til 8001, samt spesifiserer at det er en internett-adresse. 
@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
     //inet_aton(address, (struct in_addr *)&remote_address.sin_addr.s_addr);
 
     //Kobler sammen socketen med adress-structen spesifisert over 
+    printf("lol");
     connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 
 
