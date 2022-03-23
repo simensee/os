@@ -19,10 +19,11 @@
 char buffer[MAXMEM], body[MAXMEM], message[MAXMEM];
 char* www_path;
 int portnumber;
-int threads;
-int buff_slots;
+int n_threads;
+int bbuffer;
 int server_socket;
 
+struct BNDBUF *bb;
 /*
 Server-siden av programmet. 
 
@@ -54,25 +55,30 @@ void *handle_request(void *bbuff) {
     FILE *html_data;
     
     while (1) {
-        client_socket = bb_get((BNDBUF *)bbuff);
+        printf("Getting from bbuffer \n");
+        printf("Thread %li\n", (long) pthread_self());
+        
+        
+        client_socket = bb_get(bb);
+        printf("got fd: %d \n", client_socket);
         if (client_socket < 0) {
             err_n_exit("Failed to connect to client socket");
         }
-
-        printf("hei");
+        
         bzero(buffer, sizeof(buffer));
-
         // read data from client_socket
         if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
         {
             err_n_exit("Failed to recive request from client");
         }
         char * request_type = strtok(buffer, " "); // her blir GET lagt, evt andre typer hvis det skal brukes
+        printf("Request type: %s\n", request_type);
         char * path = strtok(NULL, " "); // selve pathen i requesten blir lagt inn her 
-
+        printf("Request path: %s\n", path);
         bzero(addr_buff, sizeof(addr_buff));
         strcat(www_path, path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
 
+        printf("\nFull path: %s\n", path);
         if ((html_data = fopen(www_path, "rb"))==NULL) {
             strcpy(html_buffer, "<html><body><h1>404 Page Not Found</h1></body></html>\n");
             strcpy(http_header, "HTTP/1.1 404 Not Found\r\n\r\n"); // 404 Not Found
@@ -135,8 +141,8 @@ void *handle_request(void *bbuff) {
 
 int main(int argc, char* argv[]) {
     
-    int server_socket, portnumber, addr_len, client_socket, bbuffer, n_threads;
-    char *www_path, buffer[512];
+    int server_socket, addr_len, client_socket;
+    //char buffer[512];
     
     
     if (argc < 4) {
@@ -150,11 +156,15 @@ int main(int argc, char* argv[]) {
     bbuffer = atoi(argv[4]);
 
     // Initialize the semaphore
-    pthread_t threads_arr[threads];
-    struct BNDBUF *bb = bb_init(buff_slots);
-    //int temp[threads];
-    printf("\n Port: %d\n", portnumber); // printer ut porten, kun for å sjekke at dette funker. Kan fjernes når vi skal levere
-    printf("\nPrepairing to create socket\n"); // printer for å sjekke programflyt, kan slettes før levering 
+    pthread_t threads_arr[n_threads];
+    bb = bb_init(bbuffer);
+    int temp[n_threads];
+    printf("Port: %d\n", portnumber);
+
+    printf("Threads: %d\n", n_threads);
+
+    printf("Buffer size: %d\n", bbuffer);
+
     
     
     //server_socket = init_server_socket(portnumber);
@@ -189,32 +199,33 @@ int main(int argc, char* argv[]) {
     
     // hører etter requester, her må det nok implementeres en while-løkke for å kunne motta nye requester når de er ferdige
     
-
-    for(int i = 0; i<threads;i++) {
-        //temp[i] = i;
-        int result = pthread_create(&threads_arr[i], NULL, handle_request, bb);
+    printf("Creating threads\n");
+    for(int i = 0; i<n_threads;i++) {
+        temp[i] = i;
+        printf("Creating thread %d \n", i);
+        int result = pthread_create(&threads_arr[i], NULL, &handle_request, &temp[i]);
+        printf("Finished creating thread %d \n", i);
     }
-    printf("heii");
     
-    printf("yohoo");
     socklen_t cli_len;
     struct sockaddr client_address;
-
+    int cccc = 0;
     while (1) {
+        printf("Ready to take requests on port: %d\n", portnumber);
         // aksepterer innkommende socketer 
         // [Kommentar fra Elizabeth] Spesifisert i oppgaven er ved bruk av accept(2) skjønte ikke helt dette :(
         cli_len = sizeof(client_address);
-        //client_socket = accept(server_socket, (struct sockaddr*) &client_address, &cli_len);
-        client_socket = accept(server_socket, NULL, NULL);
-
+        client_socket = accept(server_socket, (struct sockaddr*) &client_address, &cli_len);
+        
+        printf("Adding socketfd to bbuffer %d\n", client_socket);
         bb_add(bb, client_socket);
-        printf("Accepting connection...\n\n");
-        
         //bzero(buffer,sizeof(buffer));
-
+        cccc+=1;
+        printf("%d\n",cccc);
+        printf("Added socketfd to bbuffer \n");
 
         
-        printf("Client socket received! \nContent of request: [%s]", buffer); // programflyt 
+        //printf("Client socket received! \nContent of request: [%s]", buffer); // programflyt 
 
         // splitter opp mottakende request i forskjellige ting 
         
