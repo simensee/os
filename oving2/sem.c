@@ -9,33 +9,34 @@
 
 //static jmp_buf s_jumpBuffer;
 
-typedef struct SEM {
+struct SEM {
     int permits;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 
-} SEM;
+};
 
 
 
 SEM *sem_init(int initVal) {
-    /*if (initVal < 1) {
+    if (initVal < 1) {
         return NULL;
-    }*/
-    SEM* sem =(SEM*) malloc(sizeof(struct SEM));
+    }
+    SEM* sem = malloc(sizeof(struct SEM));
     if (sem == NULL) {
         return NULL;
     }
     sem->permits = initVal;
-    pthread_mutex_init(&sem->mutex, NULL);
-    pthread_cond_init(&sem->cond, NULL);
-    /*pthread_mutex_t temp_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t temp_mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t temp_cond = PTHREAD_COND_INITIALIZER;
+    /*if (temp_mutex == NULL || temp_cond == NULL) {
+        return NULL;
+    }*/
     sem->mutex = temp_mutex;
-    sem->cond = temp_cond;*/
+    sem->cond = temp_cond;
     /*if (setjmp(s_jumpBuffer)) {
     // The longjmp was executed and returned control here
-    return NULL;    
+    return NULL;
     } else {
     // Normal code execution starts here
         return (SEM)sem;
@@ -58,9 +59,7 @@ SEM *sem_init(int initVal) {
  */
 
 int sem_del(SEM *sem) {
-    int response = pthread_mutex_destroy(&sem->mutex);
     free(sem);
-    return response;
 }
 
 /* P (wait) operation.
@@ -77,16 +76,11 @@ int sem_del(SEM *sem) {
 void P(SEM *sem) {
     // lock the semaphore
     pthread_mutex_lock(&sem->mutex);
-    while (sem->permits < 1) {
-        pthread_cond_wait(&sem->cond, &sem->mutex);
-    }
-
+    while (sem->permits < 1)
+            pthread_cond_wait(&sem->cond, &sem->mutex);
     
     sem->permits--;
     pthread_mutex_unlock(&sem->mutex);
-    
-
-    //unlock the semaphore
 }   
 
 /* V (signal) operation.
@@ -100,16 +94,9 @@ void P(SEM *sem) {
  */
 
 void V(SEM *sem) {
-
-    //lock the semaphore
     pthread_mutex_lock(&sem->mutex);
     sem->permits++;
-    if (sem->permits == 1) {
+    if (sem->permits == 1)
         pthread_cond_signal(&sem->cond);
-    }
     pthread_mutex_unlock(&sem->mutex);
-    
-    //unlock the semaphore
-}   
-
-
+}
