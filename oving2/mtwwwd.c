@@ -3,8 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "bbuffer.c"
-
+#include "bbuffer.h"
+#include "sem.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -43,15 +43,11 @@ void err_n_exit(const char * message) {
     exit(1);
 }
 
-char * split_string(char str) {
-    char * token = strtok(&str, " ");
-    return token;
-}
 
 
 void *handle_request(void *bbuff) {
     int client_socket;
-    char *string, addr_buff[256], http_header[2048], html_buffer[256];
+    char *string, http_header[2048], html_buffer[256], total_path[256], msg[MAXMEM];
     FILE *html_data;
     
     while (1) {
@@ -67,21 +63,27 @@ void *handle_request(void *bbuff) {
         
         bzero(buffer, sizeof(buffer));
         // read data from client_socket
-        if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
+        //if(recv(client_socket, buffer, sizeof(buffer), 0) == -1) //trying to recive message from client
+        if(read(client_socket, buffer, sizeof(buffer)-1) < 0) 
         {
-            err_n_exit("Failed to recive request from client");
+            err_n_exit("Failed to read request from client");
         }
-        char * request_type = strtok(buffer, " "); // her blir GET lagt, evt andre typer hvis det skal brukes
-        printf("Request type: %s\n", request_type);
-        char * path = strtok(NULL, " "); // selve pathen i requesten blir lagt inn her 
-        printf("Request path: %s\n", path);
-        bzero(addr_buff, sizeof(addr_buff));
-        strcat(www_path, path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
 
-        printf("\nFull path: %s\n", path);
-        if ((html_data = fopen(www_path, "rb"))==NULL) {
+        char * request_type = strtok(buffer, " "); 
+        printf("Request type: %s\n", request_type);
+        char * path = strtok(NULL, " "); 
+        printf("Request path: %s\n", path);
+        //(int) *buffer = NULL;
+        bzero(total_path, sizeof(total_path));
+        strcat(total_path, www_path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
+
+        strcat(total_path, path); // setter sammen pathene, slik at vi får en absolutt path til filene vi leter etter 
+
+        printf("\nFull path: %s\n", total_path);
+        if ((html_data = fopen(total_path, "rb"))==NULL) {
             strcpy(html_buffer, "<html><body><h1>404 Page Not Found</h1></body></html>\n");
             strcpy(http_header, "HTTP/1.1 404 Not Found\r\n\r\n"); // 404 Not Found
+            
         } 
         else {
             fseek(html_data, 0, SEEK_END);
@@ -93,15 +95,22 @@ void *handle_request(void *bbuff) {
             fclose(html_data);
             
             string[fsize] = 0;
-            strcpy(http_header, "HTTP/1.1 200 OK\r\n\n"); // dersom den finnes
-            printf("%s\r\n", string);   
+            strcpy(body, string);
+            if(snprintf(msg, sizeof(msg),"HTTP/1.1 200 OK\r\n\n %s", body) < 0) {
+                err_n_exit("Error");
+            }
+            //strcpy(http_header, "HTTP/1.1 200 OK\r\n\n"); // dersom den finnes
+            printf("%s\r\n", string);
+            //snprintf(msg)   
         }
 
 
-        strcat(http_header, string); // setter response_data sammen med headeren til responsen tilbake til klienten 
+        //strcpy(http_header, sizeof (http_header), string, sizeof(string)); // setter response_data sammen med headeren til responsen tilbake til klienten 
 
         // sender responsen
-        if (send(client_socket, http_header, sizeof(http_header), 0) < 0) {
+        //if (send(client_socket, http_header, sizeof(http_header), 0) < 0) 
+        if (write(client_socket, msg, sizeof(msg)) < 0)
+        {
             err_n_exit("Failed to send to socket!");
         } 
         close(client_socket);
@@ -168,14 +177,14 @@ int main(int argc, char* argv[]) {
     
     
     //server_socket = init_server_socket(portnumber);
-
+    
     //start
     server_socket = socket(PF_INET, SOCK_STREAM, 0); // lager socketen som skal brukes 
     if (server_socket < 0) {
         err_n_exit("Failed to connect to client socket!");
     }
     struct sockaddr_in server_address;
-    bzero((char *) &server_address, sizeof(server_address));
+    //bzero((char *) &server_address, sizeof(server_address));
     // spesifiserer addressen og portnummer socketen skal bruke
     
     //struct sockaddr_in port_in;
@@ -187,10 +196,12 @@ int main(int argc, char* argv[]) {
     
 
     printf("\nCreated socket!\n"); // print for å sjekke programflyt  
-
+    
     // binder server-socketen sammen med adressene 
-    int n = bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address));
-    printf("%d", n);
+    if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) < 0 ){
+        err_n_exit("Failed to bind socket");
+    }
+    
     /*if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)  {
         err_n_exit("Binding error");
     }*/
@@ -216,6 +227,9 @@ int main(int argc, char* argv[]) {
         // [Kommentar fra Elizabeth] Spesifisert i oppgaven er ved bruk av accept(2) skjønte ikke helt dette :(
         cli_len = sizeof(client_address);
         client_socket = accept(server_socket, (struct sockaddr*) &client_address, &cli_len);
+        /*if (client_socket < 0) {
+            err_n_exit("Error with accepting");
+        }*/
         
         printf("Adding socketfd to bbuffer %d\n", client_socket);
         bb_add(bb, client_socket);
@@ -243,8 +257,9 @@ int main(int argc, char* argv[]) {
         //fgets(response_data, 1024, html_data); // leser filens innhold inn i response_data 
         
         //close(client_socket);
-    }
+    }   
     //close(client_socket); denne må nok brukes etterhvert, men fikk det ikke til å funke
+    //close(server_socket);
     return 0;
     
     /*pthread_t thread1;
