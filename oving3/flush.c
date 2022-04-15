@@ -60,6 +60,7 @@ char **parse_cmdline(char *cmdline, Job *job) {
     
 }
 
+// [TODO: Make a linked list with jobs, use "next" and "prev" in job struct]
 int launch(Job *job) {
     int bg; // Process should run in background
     int cpid;
@@ -76,8 +77,8 @@ int launch(Job *job) {
         }
     exit(EXIT_FAILURE);
     }
-    if (!bg) {
-        waitpid(pid);
+    if (!bg) { // if process is running in foreground, parent should wait until finished
+        waitpid(job->pid);
     }
 
 
