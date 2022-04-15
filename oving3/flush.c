@@ -5,7 +5,13 @@
 * Main functions that needs to be included:
 */
 
-
+/**
+ * @brief Practical Excercise 3
+ * 
+ * Unix Shell
+ * 
+ * @return char* 
+ */
 
 
 // Function for reading command line and returning to main [WOORKING]
@@ -61,6 +67,12 @@ char **parse_cmdline(char *cmdline, Job *job) {
 }
 
 // [TODO: Make a linked list with jobs, use "next" and "prev" in job struct]
+struct node 
+{
+    int pid;
+    struct node *prev;
+    struct node *next;
+}
 int launch(Job *job) {
     int bg; // Process should run in background
     int cpid;
@@ -80,8 +92,6 @@ int launch(Job *job) {
     if (!bg) { // if process is running in foreground, parent should wait until finished
         waitpid(job->pid);
     }
-
-
 
 
 }
@@ -110,14 +120,45 @@ void type_prompt() {
 
     return background;
 
-    
-    
 
 */
 
     // fork new process to execute command
 
 //}
+
+
+int redirection() {
+    // open path trengs vel ikke?
+    int fd = open(path);
+    if(fork() == 0) {
+        //Child
+        close(STDIN_FILENO);
+        dup(fd);
+        close(fd);
+        // Execute process
+    } else {
+        //Parent
+        close(fd);
+    }
+}
+
+
+int termination(int pid) {
+    int status = 0;
+    if (waitpid(pid, &status, 0)) 
+    {
+        if ( WIFEXITED(status) )
+        {
+            int exit_status = WEXITSTATUS(status);       
+            printf("Exit status of the child was %d\n", exit_status);
+            return exit_status;
+        }
+    }
+    return -1;
+    
+}
+
 
 
 int main(int argc, char **argv) {
