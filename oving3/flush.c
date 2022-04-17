@@ -8,6 +8,7 @@
 
 
 
+
 // Function for reading command line and returning to main [WOORKING]
 char *read_line(void) {
     
@@ -33,7 +34,7 @@ char **parse_cmdline(char *cmdline, Job *job) {
 
     
     token = strtok(cmdline, DELIM);
-    printf("%s", token);
+   
     while(token != NULL) { // run until there are no input left
         tokens[pos] = token;
         pos++;
@@ -64,21 +65,28 @@ char **parse_cmdline(char *cmdline, Job *job) {
 int launch(Job *job) {
     int bg; // Process should run in background
     int cpid;
+
     if (*job->args[job->size-1] == '&') {
         bg = 1;
     }
     
-
+    // loope gjennom builtin 
 
     if (cpid = fork() == 0) {
         job->pid = getpid();
-        if (execvp(args[0], args) == -1) {
+        if (execvp(job->args[0], job->args) == -1) {
             perror("lsh");
         }
     exit(EXIT_FAILURE);
     }
+
     if (!bg) { // if process is running in foreground, parent should wait until finished
-        waitpid(job->pid);
+        int status;
+        if (waitpid(job->pid, &status, WUNTRACED > 0)) {
+            if (WIFSTOPPED(status)) {
+                job->finished = 1;
+            }
+        }
     }
 
 
@@ -128,6 +136,11 @@ int main(int argc, char **argv) {
     
     while (1) {
         Job *job = malloc(sizeof(Job));
+       
+
+        add_to_list()
+
+        while ()
         type_prompt(); //print file path with ':' 
         cmdline = read_line();    
         printf("%s", cmdline);    
