@@ -1,5 +1,5 @@
-#ifndef Flush_h
-#define Flush_h
+#ifndef FLUSH_H
+#define FLUSH_H
 
 
 #include <stdio.h>
@@ -8,8 +8,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "Flush.h"
-#include "job.c"
+
+//#include "job.h"
+//#include "builtin.h"
 
 #define MAXARGS 128
 #define MAXPATH 256
@@ -22,12 +23,13 @@ typedef struct Job {
     int size;
     int pid;
     int bg;
-    int next;
-    int prev;
+    struct Job *next;
+    struct Job *prev;
     int finished;
 } Job;
 
 
+/*
 char *read_cmdline(void);
 
 char **parse_cmdline(char *cmdline, Job *job);
@@ -37,5 +39,5 @@ int execute(char *cmdline);
 void type_promt();
 
 void execute_cmd();
-
+*/
 #endif
