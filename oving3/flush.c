@@ -1,4 +1,10 @@
 #include "flush.h"
+//Under er includes fra Lise for ar O_RDONLY skal fungere
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 /* Implement "flush", a unix shell with some functions. 
 * 
 *
@@ -40,7 +46,7 @@ Job *remove_from_list(Job *job) { // [TODO: Skrive ferdig denne, bare vanlig rem
                 first_job = NULL;
             }
             else {
-
+                j = j -> prev; //usikker på om dette fungerer. 
             }
         }
     }
@@ -88,6 +94,68 @@ int cmd_io(Job *job) { // [TODO: skrive denne, vet ikke hvem som skrev det som e
         //Parent
         close(fd);
     }*/
+    //Lise skrev den under her
+    if (fork() == 0) {
+        //For child prosessen
+        //Funksjon for redirection ('<', '>')
+        int fd0, fd1, i, in=0, out=0;
+        char input[64], output[64];
+
+        //får feilmld på argv?
+        for (i=0;argv[i]!='\0';i++) {
+            if(strcmp(argv[i], "<")==0) {
+                argv[i]=NULL;
+                strcpy(input, argv[i+1]);
+                in=2;
+            }
+
+            if(strcmp(argv[i], ">")==0) {
+                argv[i]=NULL;
+                strcpy(output, argv[i+1]);
+                out=2;
+            }
+        }
+
+        if (in) {
+            int fd0;
+            if ((fd0 = open(input, O_RDONLY, 0)) < 0) {
+                perror("Couldn´t open input file");
+                exit(0);
+            }
+
+            dup2(fd0, 0);
+
+            close(fd0);
+        }
+
+        if (out) {
+            int fd1;
+            if ((fd1 = creat(output, 0644)) < 0) {
+                perror("Couldn´t open the output file");
+                exit(0);
+            }
+
+            dup2(fd1, STDOUT_FILENO);
+            close(fd1);
+        }
+
+        execvp(*argv, argv);
+        perror("execvp");
+        _exit(1);
+    }
+
+    else if ((fork()) < 0) {
+        printf("fork() failed!\n");
+        exit(1);
+    }
+
+    else {
+        while (!(wait(&status) == fork()));
+    }
+        {
+            /* code */
+        }
+        
     return 1;
 }
 
@@ -261,7 +329,25 @@ void type_prompt() {
     }
 }*/
 
-// Har allerede en termination i launch-metoden
+
+int cmd_io() {
+    // veldig kokt
+    if (in) { //if '<' char was found in string inputted by user
+        fd = open(input, O_RDONLY, 0); // close(0) er allerede med 
+        dup2(fd, STDIN_FILENO);
+        in = 0;
+        current_in = dup(0);  // Fix for symmetry with second paragraph
+    }
+
+    if (out) { //if '>' was found in string inputted by user
+        fd = creat(output, 0644); // hvorfor 0644? 
+        dup2(fd, STDOUT_FILENO);
+        out = 0;
+        current_out = dup(1);
+    }
+}
+
+// Har allerede en termination i launch-metoden - ops så ikke det
 int termination(int pid) {
     int status = 0;
     
@@ -275,7 +361,6 @@ int termination(int pid) {
         }
     }
     return -1;
-    
 }
 
 
