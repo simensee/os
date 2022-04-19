@@ -40,7 +40,7 @@ Job *remove_from_list(Job *job) { // [TODO: Skrive ferdig denne, bare vanlig rem
                 first_job = NULL;
             }
             else {
-
+                j = j -> prev; //usikker på om dette fungerer. 
             }
         }
     }
@@ -261,7 +261,25 @@ void type_prompt() {
     }
 }*/
 
-// Har allerede en termination i launch-metoden
+
+int cmd_io() {
+    // veldig kokt
+    if (in) { //if '<' char was found in string inputted by user
+        fd = open(input, O_RDONLY, 0); // close(0) er allerede med 
+        dup2(fd, STDIN_FILENO);
+        in = 0;
+        current_in = dup(0);  // Fix for symmetry with second paragraph
+    }
+
+    if (out) { //if '>' was found in string inputted by user
+        fd = creat(output, 0644); // hvorfor 0644? 
+        dup2(fd, STDOUT_FILENO);
+        out = 0;
+        current_out = dup(1);
+    }
+}
+
+// Har allerede en termination i launch-metoden - ops så ikke det
 int termination(int pid) {
     int status = 0;
     
@@ -275,7 +293,6 @@ int termination(int pid) {
         }
     }
     return -1;
-    
 }
 
 
