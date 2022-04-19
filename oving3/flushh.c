@@ -5,12 +5,67 @@ job *first_job = NULL;
 job *last_job = NULL;
 
 
-// check status for bg jobs
+// read cmdline from user
+char *read_line(void) {
+    
+    int bsize = BUFSIZE;
+    char *cmdline = malloc(bsize);
+
+    fgets(cmdline, bsize, stdin); //read command line
+    
+    if (feof(stdin)) // check for end of stream
+        exit(0);
+
+    return cmdline;
+
+}
+
+// parsing cmdnline into arguments
+void parse_cmdline(char *cmdline, char **args) {
+    
+    int bufsize = MAXARGS, pos = 0;
+    
+    char *token;
+
+    
+    token = strtok(cmdline, DELIM);
+   
+    while(token != NULL) { // run until there are no input left
+        args[pos] = token;
+        pos++;
+        
+        if (pos >= bufsize) {
+            bufsize += BUFSIZE;
+            args = realloc(args, bufsize * sizeof(char*));
+            if (!args) {
+                fprintf(stderr, "lsh: allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+        
+        token = strtok(NULL, DELIM);
+       
+    }
+
+
+}
+
+
+// printing out file directory + ':'
+void type_prompt() {
+    char cwd[MAXPATH];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("\n%s:", cwd);
+    } else {
+        perror("getcwd() error");
+        exit(1);
+    }
+}
+
 
 void check_status(int status, char *cmdline)
 {
-    /* removes newline from input string */
-    cmdline[strcspn(cmdline, "\r\n")] = 0;
+    cmdline[strcspn(cmdline, "\r\n")] = 0; // removes newline from cmdline
 
     if (WIFEXITED(status))
     {
@@ -25,23 +80,26 @@ void add_job(int pid, char *cmdline)
 {
     job *new_job = (job *)malloc(sizeof(job));
 
-    /* update values */
+    
     new_job->pid = pid;
     strcpy(new_job->cmdline, cmdline);
 
-    /* update previous pointer */
-
-    new_job->prev = last_job;
-    if (last_job != NULL)
-        last_job->next = new_job;
-    last_job = new_job;
-
-    /* update next pointer */
+    //update next
     new_job->next = NULL;
     if (first_job == NULL)
     {
         first_job = new_job;
     }
+    
+    // update prev
+    new_job->prev = last_job;
+    if (last_job != NULL)
+    {
+        last_job->next = new_job;
+    }
+    last_job = new_job;
+
+    
 }
 
 // print all bg jobs in linked list
@@ -118,66 +176,18 @@ int check_bg(char cmdline[MAX_LIMIT])
     if ((size> 0) && ((bg = cmdline[size]) == '&'))
     {
         cmdline[size] = '\0';
-        size--;
     }
 
 
     return bg;
 }
 
-char *read_line(void) {
-    
-    int bsize = BUFSIZE;
-    char *cmdline = malloc(bsize);
-
-    fgets(cmdline, bsize, stdin); //read command line
-    
-    if (feof(stdin)) // check for end of stream
-        exit(0);
-
-    return cmdline;
-
-}
-void type_prompt() {
-    char cwd[MAXPATH];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("\n%s:", cwd);
-    } else {
-        perror("getcwd() error");
-        exit(1);
-    }
-}
-
-void parse_cmdline(char *cmdline, char **args) {
-    
-    int bufsize = MAXARGS, pos = 0;
-    
-    char *token;
-
-    
-    token = strtok(cmdline, DELIM);
-   
-    while(token != NULL) { // run until there are no input left
-        args[pos] = token;
-        pos++;
-        
-        if (pos >= bufsize) {
-            bufsize += BUFSIZE;
-            args = realloc(args, bufsize * sizeof(char*));
-            if (!args) {
-                fprintf(stderr, "lsh: allocation error\n");
-                exit(EXIT_FAILURE);
-            }
-        }
-        
-        token = strtok(NULL, DELIM);
-       
-    }
 
 
-}
 
-int cmd_cd(char **args) { // 
+
+
+int cmd_cd(char **args) { // change directory command
     
     if (args[1] == NULL) {
             fprintf(stderr, "Expected argument to \"cd\"\n");
@@ -192,18 +202,19 @@ int cmd_cd(char **args) { //
         
 }
 
-int builtin_cmd(char **args) {
+int builtin_cmd(char **args) { // builtin commands
     
     if (!strcmp(args[0], "cd")) {
         return cmd_cd(args);
     }
 
-    if (!strcmp(args[0], "jobs")) {
+    if (!strcmp(args[0], "jobs")) { // print all bg jobs
         print_all_jobs();
         return 0;
         
     }
     
+    // check for io redirection
     for (int i = 0; i < MAX_LIMIT; i++)
     {
         if (!args[i])
@@ -218,12 +229,13 @@ int builtin_cmd(char **args) {
 }
 
 
-void launch(char **args, char *cmdline)
+// executing command line
+void launch(char **args, char *cmdline) 
 {
     int bg = check_bg(cmdline);
     int is_io = 0;
 
-    // check if the command 
+    // check if the command is builtin
     is_io = builtin_cmd(args);
 
 
@@ -236,8 +248,8 @@ void launch(char **args, char *cmdline)
     {
         perror("Failed to fork");
     }
-    if (cpid > 0) {
-        /* parent process */
+    if (cpid > 0) { // inside parent
+        
         if (bg)
         {
             // adds job to list
@@ -245,27 +257,28 @@ void launch(char **args, char *cmdline)
         }
         else
         {
-            waitpid(cpid, &status, 0);
-            check_status(status, cmdline);
+            waitpid(cpid, &status, 0); // waits for child
+            check_status(status, cmdline); 
         }
     
     }
-    if (cpid == 0)
+    if (cpid == 0) // inside child
     {
-        /* child process */
-        if (is_io)
+        
+        if (is_io) 
         {
 
-            execl("/bin/sh", "/bin/sh", "-c", cmdline, (char *)0);
+            execl("/bin/sh", "/bin/sh", "-c", cmdline, (char *)0); // executes io redirection
         }
         else
         {
-            execvp(args[0], args);
+            execvp(args[0], args); // executes standard command
         }
         exit(EXIT_FAILURE);
     }
     
 }
+
 
 
 int main(void) 
